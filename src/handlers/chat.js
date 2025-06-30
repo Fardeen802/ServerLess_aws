@@ -17,6 +17,7 @@ const {
   getAvailableServices,
   getAvailableTimeSlots
 } = require('../utils/appointment');
+const { getMessages } = require('../utils/inMemoryStore');
 
 // Initialize X-Ray
 AWSXRay.captureHTTPsGlobal(require('https'));
@@ -136,6 +137,26 @@ async function saveMessage(sessionId, role, content) {
 }
 
 module.exports.handler = async (event) => {
+  const FUNCTIONS = [
+    {
+      type: 'function',
+      name: 'book_appointment',
+      description: 'Book a new appointment for a patient',
+      parameters: {
+        type: 'object',
+        properties: {
+          name: { type: 'string' },
+          dob: { type: 'string' },
+          phone: { type: 'string' },
+          email: { type: 'string' },
+          providerId: { type: 'string' },
+          windowStart: { type: 'string' },
+          windowEnd: { type: 'string' },
+        },
+        required: ['name', 'dob', 'providerId', 'windowStart', 'windowEnd'],
+      },
+    },
+  ];
   const startTime = Date.now();
   const segment = AWSXRay.getSegment();
   
@@ -222,9 +243,7 @@ module.exports.handler = async (event) => {
     }
 
     // Save user message
-    const userMessage = await saveMessage(sessionId, 'user', message);
-    logger.debug('User message saved', { sessionId, messageId: userMessage._id });
-
+    
     // Generate embeddings for both indexes
     const [embedding3072Response, embedding1536Response] = await Promise.all([
       openai.embeddings.create({
@@ -239,14 +258,14 @@ module.exports.handler = async (event) => {
     
     const embedding3072 = embedding3072Response.data[0].embedding;
     const embedding1536 = embedding1536Response.data[0].embedding;
-
+    
     // Store conversation embedding in Pinecone
     await storeConversationEmbedding(sessionId, message, embedding3072);
-
+    
     // Extract appointment information from the message
     const extractedAppointmentInfo = extractAppointmentInfo(message);
     const hasAppointmentInfo = Object.keys(extractedAppointmentInfo).length > 0;
-
+    
     // Get conversation history from Pinecone for better context
     const conversationHistory = await getConversationHistory(sessionId, 10);
     
@@ -255,27 +274,27 @@ module.exports.handler = async (event) => {
     
     // Search for appointment-related information
     const appointmentInfo = await searchAppointmentInfo(embedding3072, 2, 'appointment-chatbot');
-
+    
     // Search for clinic information
     const clinicInfo = await searchClinicInfo(embedding1536, 2, 'kanses-primary-urgent');
-
+    
     // Prepare context for the AI
     let contextPrompt = '';
-    if (relevantContext.length > 0) {
+    if (relevantContext?.length > 0) {
       contextPrompt += '\n\nPrevious conversation context:\n';
       relevantContext.forEach(match => {
         contextPrompt += `- ${match.metadata.message}\n`;
       });
     }
-
-    if (appointmentInfo.length > 0) {
+    
+    if (appointmentInfo?.length > 0) {
       contextPrompt += '\n\nRelevant appointment information:\n';
       appointmentInfo.forEach(match => {
         contextPrompt += `- ${JSON.stringify(match.metadata)}\n`;
       });
     }
-
-    if (clinicInfo.length > 0) {
+    
+    if (clinicInfo?.length > 0) {
       contextPrompt += '\n\nRelevant clinic information:\n';
       clinicInfo.forEach(match => {
         contextPrompt += `- ${match.metadata.text}\n`;
@@ -285,103 +304,93 @@ module.exports.handler = async (event) => {
     // Get available services and time slots
     // const availableServices = getAvailableServices();
     // const availableTimeSlots = getAvailableTimeSlots();
-
+    
     // Prepare system prompt for appointment booking
     const systemPrompt = `You are an AI appointment booking assistant for a healthcare facility. Your role is to help users book appointments by collecting necessary information and providing helpful responses.
+    
+    
+    
+    ${contextPrompt}
+    
+    Current appointment information collected: ${JSON.stringify(extractedAppointmentInfo)}
+    
+    Instructions:
+    1. Be friendly and professional
+    2. Help collect missing appointment information (name, email, phone, service, date, time)
+    3. If all information is collected, offer to confirm the appointment
+    4. Provide available services and time slots when asked
+    5. Keep responses concise and helpful
+    6. Call appropriate function if required
+    
+    Remember: You're helping with appointment booking and information provider of Clinic, not general medical advice.`;
 
-
-
-${contextPrompt}
-
-Current appointment information collected: ${JSON.stringify(extractedAppointmentInfo)}
-
-Instructions:
-1. Be friendly and professional
-2. Help collect missing appointment information (name, email, phone, service, date, time)
-3. If all information is collected, offer to confirm the appointment
-4. Provide available services and time slots when asked
-5. Keep responses concise and helpful
-
-Remember: You're helping with appointment booking and information provider of Clinic, not general medical advice.`;
-
+    const userMessage = await getMessages(sessionId, systemPrompt);
+    logger.debug('User message saved', { sessionId, messageId: userMessage._id });
+    
     // Call OpenAI API with timeout and tracing
     const openaiSubsegment = segment.addNewSubsegment('openai-api');
-    const completion = await Promise.race([
-      openai.chat.completions.create({
-        model: 'gpt-3.5-turbo',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: message }
-        ],
-        max_tokens: 1000,
-        temperature: 0.7,
-        presence_penalty: 0.1,
-        frequency_penalty: 0.1
-      }),
-      new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('OpenAI API timeout')), 25000)
-      )
-    ]);
+    const first = await openai.responses.create({
+      model: 'gpt-4o-mini',
+      messages: userMessage,
+      instructions : systemPrompt,
+      temperature: 0.7,
+      tools: FUNCTIONS,
+      tool_choice: 'auto',
+    });
     openaiSubsegment.close();
+    const choice = first.output[0];
+    console.log("choice type -> ", choice.type);
 
-    const aiReply = completion.choices[0].message.content;
-    logger.debug('OpenAI response received', { 
-      sessionId, 
-      tokens: completion.usage?.total_tokens,
-      model: completion.model 
-    });
+    if (choice.type === 'function_call') {
+      const { name, arguments } = choice;
+      const args = JSON.parse(choice?.arguments);
+      console.log('inside function call args -> ', args);
 
-    // Check if user wants to confirm appointment and has all required information
-    const wantsToConfirm = aiReply.toLowerCase().includes('confirm') || 
-                          message.toLowerCase().includes('confirm') ||
-                          message.toLowerCase().includes('book') ||
-                          message.toLowerCase().includes('schedule');
+      let functionResult;
 
-    let finalReply = aiReply;
-    let appointmentConfirmation = null;
-
-    if (wantsToConfirm && hasAppointmentInfo) {
-      // Validate appointment data
-      const validation = validateAppointmentData(extractedAppointmentInfo);
-      
-      if (validation.valid) {
-        // Create the appointment
-        const appointment = await createAppointment(extractedAppointmentInfo);
-        appointmentConfirmation = generateAppointmentConfirmation(appointment);
-        finalReply = appointmentConfirmation.confirmationMessage;
-        
-        logger.info('Appointment confirmed:', appointment.id);
-      } else {
-        finalReply = `I need a bit more information to book your appointment. Please provide: ${validation.errors.join(', ')}`;
+      if (name === 'book_appointment') {
+        let appointmentId = 'appt_' + crypto.randomUUID.toString();
+        functionResult['appointmentId'] = appointmentId;
+        functionResult['message'] =
+          `your appointment is successfully created with reference number ${appointmentId}`;
       }
+      console.log('function result -> ', JSON.stringify(functionResult));
+
+      appendMessage(sessionId, choice);
+      appendMessage(sessionId, {
+        type: 'function_call_output',
+        call_id: choice.call_id,
+        output: JSON.stringify(functionResult),
+      });
+      const messagesInput = getMessages(sessionId).map(m => ({
+        ...m,
+      }));
+      const second = await openai.responses.create({
+        model: 'gpt-4o-mini',
+        input: messagesInput,
+        tools: FUNCTIONS,
+        store: true,
+      });
+      console.log('second response -> ', second);
+      const wrap = second.output_text;
+      appendMessage(sessionId, { role: 'assistant', content: wrap });
+    } else if (first.output_text) {
+      appendMessage(sessionId, {
+        role: 'assistant',
+        content: first.output_text,
+      });
     }
-
-    // Save AI reply
-    const aiMessage = await saveMessage(sessionId, 'assistant', finalReply);
-    logger.debug('AI message saved', { sessionId, messageId: aiMessage._id });
-
-    const responseTime = Date.now() - startTime;
-    logger.info('Chat request completed successfully', { 
-      sessionId, 
-      responseTime,
-      messageLength: message.length,
-      replyLength: finalReply.length,
-      appointmentBooked: !!appointmentConfirmation
-    });
-
+    const history = getMessages(sessionId);
+    const last = history.filter(m=>m.role==='assistant').slice(-1)[0];
     return {
       statusCode: 200,
       headers,
       body: JSON.stringify({ 
-        reply: finalReply,
+        reply: last?.content,
         sessionId,
-        responseTime,
-        tokens: completion.usage?.total_tokens,
-        appointmentConfirmation,
-        extractedAppointmentInfo
+        tokens: choice?.usage?.total_tokens,
       })
     };
-
   } catch (error) {
     const responseTime = Date.now() - startTime;
     logger.error('Chat handler error:', {
