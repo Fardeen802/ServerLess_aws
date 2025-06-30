@@ -1,0 +1,149 @@
+service: serverless-chat-app
+
+frameworkVersion: '4'
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  stage: ${opt:stage, 'dev'}
+  region: ${opt:region, 'us-east-1'}
+  timeout: 30
+  memorySize: 1024
+  environment:
+    NODE_ENV: ${env:NODE_ENV, 'development'}
+    MONGODB_URI: ${env:MONGODB_URI, 'mongodb://localhost:27017/chat-app'}
+    OPENAI_API_KEY: ${env:OPENAI_API_KEY, ''}
+    PINECONE_API_KEY: ${env:PINECONE_API_KEY, ''}
+    PINECONE_ENVIRONMENT: ${env:PINECONE_ENVIRONMENT, ''}
+    PINECONE_INDEX_NAME: ${env:PINECONE_INDEX_NAME, 'appointment-chatbot'}
+    LOG_LEVEL: ${env:LOG_LEVEL, 'info'}
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - logs:CreateLogGroup
+            - logs:CreateLogStream
+            - logs:PutLogEvents
+          Resource: "arn:aws:logs:*:*:*"
+        - Effect: Allow
+          Action:
+            - xray:PutTraceSegments
+            - xray:PutTelemetryRecords
+          Resource: "*"
+  tags:
+    Environment: ${self:provider.stage}
+    Service: chat-app
+    ManagedBy: serverless
+    Project: serverless-chat
+    Owner: ${env:OWNER, 'dev-team'}
+
+package:
+  exclude:
+    - chat-frontend/**
+    - .git/**
+    - .gitignore
+    - README.md
+    - scripts/**
+    - tests/**
+    - package-lock.json
+    - .vscode/**
+    - logs/**
+    - .serverless/**
+    - .webpack/**
+    - coverage/**
+    - .nyc_output/**
+    - .eslintrc.js
+    - .prettierrc
+    - .prettierignore
+    - .editorconfig
+    - .babelrc
+    - .babelrc.js
+    - babel.config.js
+    - webpack.config.js
+    - jest.config.js
+    - tsconfig.json
+    - .typescript/**
+    - .DS_Store
+    - Thumbs.db
+
+functions:
+  chat:
+    handler: src/handlers/chat.handler
+    timeout: 30
+    memorySize: 1024
+    events:
+      - http:
+          path: chat
+          method: post
+          cors:
+            origin: ${env:ALLOWED_ORIGINS, '*'}
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+            methods:
+              - POST
+              - OPTIONS
+            allowCredentials: false
+          request:
+            schemas:
+              application/json:
+                type: object
+                properties:
+                  sessionId:
+                    type: string
+                    minLength: 1
+                    maxLength: 100
+                  message:
+                    type: string
+                    minLength: 1
+                    maxLength: 4000
+                required:
+                  - sessionId
+                  - message
+    environment:
+      MONGODB_URI: ${env:MONGODB_URI, 'mongodb://localhost:27017/chat-app'}
+      OPENAI_API_KEY: ${env:OPENAI_API_KEY, ''}
+      PINECONE_API_KEY: ${env:PINECONE_API_KEY, ''}
+      PINECONE_ENVIRONMENT: ${env:PINECONE_ENVIRONMENT, ''}
+      PINECONE_INDEX_NAME: ${env:PINECONE_INDEX_NAME, 'appointment-chatbot'}
+      LOG_LEVEL: ${env:LOG_LEVEL, 'info'}
+      STAGE: ${self:provider.stage}
+    tags:
+      Function: chat-handler
+      Environment: ${self:provider.stage}
+    tracing: Active
+    logRetentionInDays: 14
+
+  health:
+    handler: src/handlers/health.handler
+    timeout: 10
+    memorySize: 256
+    events:
+      - http:
+          path: health
+          method: get
+          cors: true
+    environment:
+      STAGE: ${self:provider.stage}
+    tags:
+      Function: health-check
+      Environment: ${self:provider.stage}
+
+plugins:
+  - serverless-offline
+  - serverless-dotenv-plugin
+
+custom:
+  serverless-offline:
+    httpPort: 3000
+    lambdaPort: 3002
+    noPrependStageInUrl: true
+    useChildProcesses: true
+  dotenv:
+    path: .env.${opt:stage, 'dev'}
+    logging: false 
