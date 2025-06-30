@@ -1,0 +1,2423 @@
+{
+  "/Users/fardeen/Desktop/serverless_Backend/serverless.yml": {
+    "versionFramework": "4.17.1",
+    "servicePath": "/Users/fardeen/Desktop/serverless_Backend/serverless.yml",
+    "serviceConfigFileName": "serverless.yml",
+    "service": {
+      "service": "serverless-chat-app",
+      "frameworkVersion": "4",
+      "provider": {
+        "name": "aws",
+        "runtime": "nodejs18.x",
+        "stage": "prod",
+        "region": "us-east-1",
+        "timeout": 30,
+        "memorySize": 1024,
+        "environment": {
+          "NODE_ENV": "production",
+          "MONGODB_URI": "mongodb+srv://QureNoteApp:UgSEZ0EG46UtVXkW@serverlessinstance0.va5xkum.mongodb.net/DevQureNote?retryWrites=true&w=majority",
+          "OPENAI_API_KEY": "<REDACTED>",
+          "PINECONE_API_KEY": "<REDACTED>",
+          "PINECONE_ENVIRONMENT": "us-east-1-aws",
+          "PINECONE_INDEX_NAME": "appointment-chatbot",
+          "LOG_LEVEL": "info",
+          "STAGE": "prod",
+          "VPC_SECURITY_GROUP_ID": "sg-00000000000000000",
+          "VPC_SUBNET_ID_1": "subnet-00000000000000000",
+          "VPC_SUBNET_ID_2": "subnet-00000000000000000",
+          "RESERVED_CONCURRENCY": "1000",
+          "ALLOWED_ORIGINS": "*",
+          "OWNER": "dev-team"
+        },
+        "iam": {
+          "role": {
+            "statements": [
+              {
+                "Effect": "Allow",
+                "Action": [
+                  "logs:CreateLogGroup",
+                  "logs:CreateLogStream",
+                  "logs:PutLogEvents"
+                ],
+                "Resource": "arn:aws:logs:*:*:*"
+              },
+              {
+                "Effect": "Allow",
+                "Action": [
+                  "xray:PutTraceSegments",
+                  "xray:PutTelemetryRecords"
+                ],
+                "Resource": "*"
+              }
+            ]
+          }
+        },
+        "tags": {
+          "Environment": "prod",
+          "Service": "chat-app",
+          "ManagedBy": "serverless",
+          "Project": "serverless-chat",
+          "Owner": "dev-team"
+        },
+        "versionFunctions": true,
+        "compiledCloudFormationTemplate": {
+          "AWSTemplateFormatVersion": "2010-09-09",
+          "Description": "The AWS CloudFormation template for this Serverless application",
+          "Resources": {
+            "ChatLogGroup": {
+              "Type": "AWS::Logs::LogGroup",
+              "Properties": {
+                "LogGroupName": "/aws/lambda/serverless-chat-app-prod-chat",
+                "RetentionInDays": 14
+              }
+            },
+            "HealthLogGroup": {
+              "Type": "AWS::Logs::LogGroup",
+              "Properties": {
+                "LogGroupName": "/aws/lambda/serverless-chat-app-prod-health"
+              }
+            },
+            "IamRoleLambdaExecution": {
+              "Type": "AWS::IAM::Role",
+              "Properties": {
+                "AssumeRolePolicyDocument": {
+                  "Version": "2012-10-17",
+                  "Statement": [
+                    {
+                      "Effect": "Allow",
+                      "Principal": {
+                        "Service": [
+                          "lambda.amazonaws.com"
+                        ]
+                      },
+                      "Action": [
+                        "sts:AssumeRole"
+                      ]
+                    }
+                  ]
+                },
+                "Policies": [
+                  {
+                    "PolicyName": {
+                      "Fn::Join": [
+                        "-",
+                        [
+                          "serverless-chat-app",
+                          "prod",
+                          "lambda"
+                        ]
+                      ]
+                    },
+                    "PolicyDocument": {
+                      "Version": "2012-10-17",
+                      "Statement": [
+                        {
+                          "Effect": "Allow",
+                          "Action": [
+                            "logs:CreateLogStream",
+                            "logs:CreateLogGroup",
+                            "logs:TagResource"
+                          ],
+                          "Resource": [
+                            {
+                              "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/serverless-chat-app-prod*:*"
+                            }
+                          ]
+                        },
+                        {
+                          "Effect": "Allow",
+                          "Action": [
+                            "logs:PutLogEvents"
+                          ],
+                          "Resource": [
+                            {
+                              "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/serverless-chat-app-prod*:*:*"
+                            }
+                          ]
+                        },
+                        {
+                          "Effect": "Allow",
+                          "Action": [
+                            "logs:CreateLogGroup",
+                            "logs:CreateLogStream",
+                            "logs:PutLogEvents"
+                          ],
+                          "Resource": "arn:aws:logs:*:*:*"
+                        },
+                        {
+                          "Effect": "Allow",
+                          "Action": [
+                            "xray:PutTraceSegments",
+                            "xray:PutTelemetryRecords"
+                          ],
+                          "Resource": "*"
+                        },
+                        {
+                          "Effect": "Allow",
+                          "Action": [
+                            "xray:PutTraceSegments",
+                            "xray:PutTelemetryRecords"
+                          ],
+                          "Resource": [
+                            "*"
+                          ]
+                        }
+                      ]
+                    }
+                  }
+                ],
+                "Path": "/",
+                "RoleName": {
+                  "Fn::Join": [
+                    "-",
+                    [
+                      "serverless-chat-app",
+                      "prod",
+                      {
+                        "Ref": "AWS::Region"
+                      },
+                      "lambdaRole"
+                    ]
+                  ]
+                }
+              }
+            },
+            "ChatLambdaFunction": {
+              "Type": "AWS::Lambda::Function",
+              "Properties": {
+                "Code": {
+                  "S3Bucket": "serverless-framework-deployments-us-east-1-f3884fb4-c163",
+                  "S3Key": "serverless/serverless-chat-app/prod/1751307254617-2025-06-30T18:14:14.617Z/serverless-chat-app.zip"
+                },
+                "Handler": "src/handlers/chat.handler",
+                "Runtime": "nodejs18.x",
+                "FunctionName": "serverless-chat-app-prod-chat",
+                "MemorySize": 1024,
+                "Timeout": 30,
+                "Tags": [
+                  {
+                    "Key": "Environment",
+                    "Value": "prod"
+                  },
+                  {
+                    "Key": "Service",
+                    "Value": "chat-app"
+                  },
+                  {
+                    "Key": "ManagedBy",
+                    "Value": "serverless"
+                  },
+                  {
+                    "Key": "Project",
+                    "Value": "serverless-chat"
+                  },
+                  {
+                    "Key": "Owner",
+                    "Value": "dev-team"
+                  },
+                  {
+                    "Key": "Function",
+                    "Value": "chat-handler"
+                  }
+                ],
+                "TracingConfig": {
+                  "Mode": "Active"
+                },
+                "Environment": {
+                  "Variables": {
+                    "NODE_ENV": "production",
+                    "MONGODB_URI": "mongodb+srv://QureNoteApp:UgSEZ0EG46UtVXkW@serverlessinstance0.va5xkum.mongodb.net/DevQureNote?retryWrites=true&w=majority",
+                    "OPENAI_API_KEY": "<REDACTED>",
+                    "PINECONE_API_KEY": "<REDACTED>",
+                    "PINECONE_ENVIRONMENT": "us-east-1-aws",
+                    "PINECONE_INDEX_NAME": "appointment-chatbot",
+                    "LOG_LEVEL": "info",
+                    "STAGE": "prod",
+                    "VPC_SECURITY_GROUP_ID": "sg-00000000000000000",
+                    "VPC_SUBNET_ID_1": "subnet-00000000000000000",
+                    "VPC_SUBNET_ID_2": "subnet-00000000000000000",
+                    "RESERVED_CONCURRENCY": "1000",
+                    "ALLOWED_ORIGINS": "*",
+                    "OWNER": "dev-team"
+                  }
+                },
+                "Role": {
+                  "Fn::GetAtt": [
+                    "IamRoleLambdaExecution",
+                    "Arn"
+                  ]
+                }
+              },
+              "DependsOn": [
+                "ChatLogGroup"
+              ]
+            },
+            "HealthLambdaFunction": {
+              "Type": "AWS::Lambda::Function",
+              "Properties": {
+                "Code": {
+                  "S3Bucket": "serverless-framework-deployments-us-east-1-f3884fb4-c163",
+                  "S3Key": "serverless/serverless-chat-app/prod/1751307254617-2025-06-30T18:14:14.617Z/serverless-chat-app.zip"
+                },
+                "Handler": "src/handlers/health.handler",
+                "Runtime": "nodejs18.x",
+                "FunctionName": "serverless-chat-app-prod-health",
+                "MemorySize": 256,
+                "Timeout": 10,
+                "Tags": [
+                  {
+                    "Key": "Environment",
+                    "Value": "prod"
+                  },
+                  {
+                    "Key": "Service",
+                    "Value": "chat-app"
+                  },
+                  {
+                    "Key": "ManagedBy",
+                    "Value": "serverless"
+                  },
+                  {
+                    "Key": "Project",
+                    "Value": "serverless-chat"
+                  },
+                  {
+                    "Key": "Owner",
+                    "Value": "dev-team"
+                  },
+                  {
+                    "Key": "Function",
+                    "Value": "health-check"
+                  }
+                ],
+                "Environment": {
+                  "Variables": {
+                    "NODE_ENV": "production",
+                    "MONGODB_URI": "mongodb+srv://QureNoteApp:UgSEZ0EG46UtVXkW@serverlessinstance0.va5xkum.mongodb.net/DevQureNote?retryWrites=true&w=majority",
+                    "OPENAI_API_KEY": "<REDACTED>",
+                    "PINECONE_API_KEY": "<REDACTED>",
+                    "PINECONE_ENVIRONMENT": "us-east-1-aws",
+                    "PINECONE_INDEX_NAME": "appointment-chatbot",
+                    "LOG_LEVEL": "info",
+                    "STAGE": "prod",
+                    "VPC_SECURITY_GROUP_ID": "sg-00000000000000000",
+                    "VPC_SUBNET_ID_1": "subnet-00000000000000000",
+                    "VPC_SUBNET_ID_2": "subnet-00000000000000000",
+                    "RESERVED_CONCURRENCY": "1000",
+                    "ALLOWED_ORIGINS": "*",
+                    "OWNER": "dev-team"
+                  }
+                },
+                "Role": {
+                  "Fn::GetAtt": [
+                    "IamRoleLambdaExecution",
+                    "Arn"
+                  ]
+                }
+              },
+              "DependsOn": [
+                "HealthLogGroup"
+              ]
+            },
+            "ChatLambdaVersionieOqAYO3TaSuGGTUoXfJ5PguaQmsQO23KJkotbIi7M": {
+              "Type": "AWS::Lambda::Version",
+              "DeletionPolicy": "Retain",
+              "Properties": {
+                "FunctionName": {
+                  "Ref": "ChatLambdaFunction"
+                },
+                "CodeSha256": "IE0Hngb21vJ5Tv52gL5Qfq0C6Fqqu8soz+CcqCZxTJg="
+              }
+            },
+            "HealthLambdaVersion7oGh6wgERS2jDzKjvDWbs5DTWY0NWRQzju5RYaAuR4": {
+              "Type": "AWS::Lambda::Version",
+              "DeletionPolicy": "Retain",
+              "Properties": {
+                "FunctionName": {
+                  "Ref": "HealthLambdaFunction"
+                },
+                "CodeSha256": "IE0Hngb21vJ5Tv52gL5Qfq0C6Fqqu8soz+CcqCZxTJg="
+              }
+            },
+            "ApiGatewayRestApi": {
+              "Type": "AWS::ApiGateway::RestApi",
+              "Properties": {
+                "Name": "prod-serverless-chat-app",
+                "EndpointConfiguration": {
+                  "Types": [
+                    "EDGE"
+                  ]
+                },
+                "Policy": ""
+              }
+            },
+            "ApiGatewayResourceChat": {
+              "Type": "AWS::ApiGateway::Resource",
+              "Properties": {
+                "ParentId": {
+                  "Fn::GetAtt": [
+                    "ApiGatewayRestApi",
+                    "RootResourceId"
+                  ]
+                },
+                "PathPart": "chat",
+                "RestApiId": {
+                  "Ref": "ApiGatewayRestApi"
+                }
+              }
+            },
+            "ApiGatewayResourceHealth": {
+              "Type": "AWS::ApiGateway::Resource",
+              "Properties": {
+                "ParentId": {
+                  "Fn::GetAtt": [
+                    "ApiGatewayRestApi",
+                    "RootResourceId"
+                  ]
+                },
+                "PathPart": "health",
+                "RestApiId": {
+                  "Ref": "ApiGatewayRestApi"
+                }
+              }
+            },
+            "ApiGatewayMethodChatOptions": {
+              "Type": "AWS::ApiGateway::Method",
+              "Properties": {
+                "AuthorizationType": "NONE",
+                "HttpMethod": "OPTIONS",
+                "MethodResponses": [
+                  {
+                    "StatusCode": "200",
+                    "ResponseParameters": {
+                      "method.response.header.Access-Control-Allow-Origin": true,
+                      "method.response.header.Access-Control-Allow-Headers": true,
+                      "method.response.header.Access-Control-Allow-Methods": true
+                    },
+                    "ResponseModels": {}
+                  }
+                ],
+                "RequestParameters": {},
+                "Integration": {
+                  "Type": "MOCK",
+                  "RequestTemplates": {
+                    "application/json": "{statusCode:200}"
+                  },
+                  "ContentHandling": "CONVERT_TO_TEXT",
+                  "IntegrationResponses": [
+                    {
+                      "StatusCode": "200",
+                      "ResponseParameters": {
+                        "method.response.header.Access-Control-Allow-Origin": "'*'",
+                        "method.response.header.Access-Control-Allow-Headers": "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Amz-User-Agent'",
+                        "method.response.header.Access-Control-Allow-Methods": "'POST,OPTIONS'"
+                      },
+                      "ResponseTemplates": {
+                        "application/json": ""
+                      }
+                    }
+                  ]
+                },
+                "ResourceId": {
+                  "Ref": "ApiGatewayResourceChat"
+                },
+                "RestApiId": {
+                  "Ref": "ApiGatewayRestApi"
+                }
+              }
+            },
+            "ApiGatewayMethodHealthOptions": {
+              "Type": "AWS::ApiGateway::Method",
+              "Properties": {
+                "AuthorizationType": "NONE",
+                "HttpMethod": "OPTIONS",
+                "MethodResponses": [
+                  {
+                    "StatusCode": "200",
+                    "ResponseParameters": {
+                      "method.response.header.Access-Control-Allow-Origin": true,
+                      "method.response.header.Access-Control-Allow-Headers": true,
+                      "method.response.header.Access-Control-Allow-Methods": true
+                    },
+                    "ResponseModels": {}
+                  }
+                ],
+                "RequestParameters": {},
+                "Integration": {
+                  "Type": "MOCK",
+                  "RequestTemplates": {
+                    "application/json": "{statusCode:200}"
+                  },
+                  "ContentHandling": "CONVERT_TO_TEXT",
+                  "IntegrationResponses": [
+                    {
+                      "StatusCode": "200",
+                      "ResponseParameters": {
+                        "method.response.header.Access-Control-Allow-Origin": "'*'",
+                        "method.response.header.Access-Control-Allow-Headers": "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Amz-User-Agent,X-Amzn-Trace-Id'",
+                        "method.response.header.Access-Control-Allow-Methods": "'OPTIONS,GET'"
+                      },
+                      "ResponseTemplates": {
+                        "application/json": ""
+                      }
+                    }
+                  ]
+                },
+                "ResourceId": {
+                  "Ref": "ApiGatewayResourceHealth"
+                },
+                "RestApiId": {
+                  "Ref": "ApiGatewayRestApi"
+                }
+              }
+            },
+            "ApiGatewayMethodChatPost": {
+              "Type": "AWS::ApiGateway::Method",
+              "Properties": {
+                "HttpMethod": "POST",
+                "RequestParameters": {},
+                "ResourceId": {
+                  "Ref": "ApiGatewayResourceChat"
+                },
+                "RestApiId": {
+                  "Ref": "ApiGatewayRestApi"
+                },
+                "ApiKeyRequired": "<REDACTED>",
+                "AuthorizationType": "NONE",
+                "Integration": {
+                  "IntegrationHttpMethod": "POST",
+                  "Type": "AWS_PROXY",
+                  "Uri": {
+                    "Fn::Join": [
+                      "",
+                      [
+                        "arn:",
+                        {
+                          "Ref": "AWS::Partition"
+                        },
+                        ":apigateway:",
+                        {
+                          "Ref": "AWS::Region"
+                        },
+                        ":lambda:path/2015-03-31/functions/",
+                        {
+                          "Fn::GetAtt": [
+                            "ChatLambdaFunction",
+                            "Arn"
+                          ]
+                        },
+                        "/invocations"
+                      ]
+                    ]
+                  }
+                },
+                "MethodResponses": [],
+                "RequestValidatorId": {
+                  "Ref": "ApiGatewayServerlesschatappRequestValidator"
+                },
+                "RequestModels": {
+                  "application/json": {
+                    "Ref": "ApiGatewayMethodChatPostApplicationJsonModel"
+                  }
+                }
+              },
+              "DependsOn": [
+                "ChatLambdaPermissionApiGateway"
+              ]
+            },
+            "ApiGatewayMethodHealthGet": {
+              "Type": "AWS::ApiGateway::Method",
+              "Properties": {
+                "HttpMethod": "GET",
+                "RequestParameters": {},
+                "ResourceId": {
+                  "Ref": "ApiGatewayResourceHealth"
+                },
+                "RestApiId": {
+                  "Ref": "ApiGatewayRestApi"
+                },
+                "ApiKeyRequired": "<REDACTED>",
+                "AuthorizationType": "NONE",
+                "Integration": {
+                  "IntegrationHttpMethod": "POST",
+                  "Type": "AWS_PROXY",
+                  "Uri": {
+                    "Fn::Join": [
+                      "",
+                      [
+                        "arn:",
+                        {
+                          "Ref": "AWS::Partition"
+                        },
+                        ":apigateway:",
+                        {
+                          "Ref": "AWS::Region"
+                        },
+                        ":lambda:path/2015-03-31/functions/",
+                        {
+                          "Fn::GetAtt": [
+                            "HealthLambdaFunction",
+                            "Arn"
+                          ]
+                        },
+                        "/invocations"
+                      ]
+                    ]
+                  }
+                },
+                "MethodResponses": []
+              },
+              "DependsOn": [
+                "HealthLambdaPermissionApiGateway"
+              ]
+            },
+            "ApiGatewayServerlesschatappRequestValidator": {
+              "Type": "AWS::ApiGateway::RequestValidator",
+              "Properties": {
+                "RestApiId": {
+                  "Ref": "ApiGatewayRestApi"
+                },
+                "ValidateRequestBody": true,
+                "ValidateRequestParameters": true,
+                "Name": "serverless-chat-app-prod | Validate request body and querystring parameters"
+              }
+            },
+            "ApiGatewayMethodChatPostApplicationJsonModel": {
+              "Type": "AWS::ApiGateway::Model",
+              "Properties": {
+                "RestApiId": {
+                  "Ref": "ApiGatewayRestApi"
+                },
+                "ContentType": "application/json",
+                "Schema": {
+                  "type": "object",
+                  "properties": {
+                    "sessionId": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    },
+                    "message": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 4000
+                    }
+                  },
+                  "required": [
+                    "sessionId",
+                    "message"
+                  ]
+                }
+              }
+            },
+            "ApiGatewayDeployment1751307233965": {
+              "Type": "AWS::ApiGateway::Deployment",
+              "Properties": {
+                "RestApiId": {
+                  "Ref": "ApiGatewayRestApi"
+                },
+                "StageName": "prod"
+              },
+              "DependsOn": [
+                "ApiGatewayMethodChatOptions",
+                "ApiGatewayMethodHealthOptions",
+                "ApiGatewayMethodChatPost",
+                "ApiGatewayMethodHealthGet"
+              ]
+            },
+            "ChatLambdaPermissionApiGateway": {
+              "Type": "AWS::Lambda::Permission",
+              "Properties": {
+                "FunctionName": {
+                  "Fn::GetAtt": [
+                    "ChatLambdaFunction",
+                    "Arn"
+                  ]
+                },
+                "Action": "lambda:InvokeFunction",
+                "Principal": "apigateway.amazonaws.com",
+                "SourceArn": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:",
+                      {
+                        "Ref": "AWS::Partition"
+                      },
+                      ":execute-api:",
+                      {
+                        "Ref": "AWS::Region"
+                      },
+                      ":",
+                      {
+                        "Ref": "AWS::AccountId"
+                      },
+                      ":",
+                      {
+                        "Ref": "ApiGatewayRestApi"
+                      },
+                      "/*/*"
+                    ]
+                  ]
+                }
+              }
+            },
+            "HealthLambdaPermissionApiGateway": {
+              "Type": "AWS::Lambda::Permission",
+              "Properties": {
+                "FunctionName": {
+                  "Fn::GetAtt": [
+                    "HealthLambdaFunction",
+                    "Arn"
+                  ]
+                },
+                "Action": "lambda:InvokeFunction",
+                "Principal": "apigateway.amazonaws.com",
+                "SourceArn": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:",
+                      {
+                        "Ref": "AWS::Partition"
+                      },
+                      ":execute-api:",
+                      {
+                        "Ref": "AWS::Region"
+                      },
+                      ":",
+                      {
+                        "Ref": "AWS::AccountId"
+                      },
+                      ":",
+                      {
+                        "Ref": "ApiGatewayRestApi"
+                      },
+                      "/*/*"
+                    ]
+                  ]
+                }
+              }
+            }
+          },
+          "Outputs": {
+            "ServerlessDeploymentBucketName": {
+              "Value": "serverless-framework-deployments-us-east-1-f3884fb4-c163",
+              "Export": {
+                "Name": "sls-serverless-chat-app-prod-ServerlessDeploymentBucketName"
+              }
+            },
+            "ChatLambdaFunctionQualifiedArn": {
+              "Description": "Current Lambda function version",
+              "Value": {
+                "Ref": "ChatLambdaVersionieOqAYO3TaSuGGTUoXfJ5PguaQmsQO23KJkotbIi7M"
+              },
+              "Export": {
+                "Name": "sls-serverless-chat-app-prod-ChatLambdaFunctionQualifiedArn"
+              }
+            },
+            "HealthLambdaFunctionQualifiedArn": {
+              "Description": "Current Lambda function version",
+              "Value": {
+                "Ref": "HealthLambdaVersion7oGh6wgERS2jDzKjvDWbs5DTWY0NWRQzju5RYaAuR4"
+              },
+              "Export": {
+                "Name": "sls-serverless-chat-app-prod-HealthLambdaFunctionQualifiedArn"
+              }
+            },
+            "ServiceEndpoint": {
+              "Description": "URL of the service endpoint",
+              "Value": {
+                "Fn::Join": [
+                  "",
+                  [
+                    "https://",
+                    {
+                      "Ref": "ApiGatewayRestApi"
+                    },
+                    ".execute-api.",
+                    {
+                      "Ref": "AWS::Region"
+                    },
+                    ".",
+                    {
+                      "Ref": "AWS::URLSuffix"
+                    },
+                    "/prod"
+                  ]
+                ]
+              },
+              "Export": {
+                "Name": "sls-serverless-chat-app-prod-ServiceEndpoint"
+              }
+            }
+          }
+        },
+        "vpc": {}
+      },
+      "package": {
+        "exclude": [
+          "chat-frontend/**",
+          ".git/**",
+          ".gitignore",
+          "README.md",
+          "scripts/**",
+          "tests/**",
+          "package-lock.json",
+          ".vscode/**",
+          "logs/**",
+          ".serverless/**",
+          ".webpack/**",
+          "coverage/**",
+          ".nyc_output/**",
+          ".eslintrc.js",
+          ".prettierrc",
+          ".prettierignore",
+          ".editorconfig",
+          ".babelrc",
+          ".babelrc.js",
+          "babel.config.js",
+          "webpack.config.js",
+          "jest.config.js",
+          "tsconfig.json",
+          ".typescript/**",
+          ".DS_Store",
+          "Thumbs.db"
+        ],
+        "artifactsS3KeyDirname": "serverless/serverless-chat-app/prod/code-artifacts",
+        "deploymentBucket": "serverless-framework-deployments-us-east-1-f3884fb4-c163",
+        "artifact": "/Users/fardeen/Desktop/serverless_Backend/.serverless/serverless-chat-app.zip",
+        "artifactDirectoryName": "serverless/serverless-chat-app/prod/1751307254617-2025-06-30T18:14:14.617Z"
+      },
+      "functions": {
+        "chat": {
+          "handler": "src/handlers/chat.handler",
+          "timeout": 30,
+          "memorySize": 1024,
+          "events": [
+            {
+              "http": {
+                "path": "chat",
+                "method": "post",
+                "cors": {
+                  "origin": "*",
+                  "methods": [
+                    "POST",
+                    "OPTIONS"
+                  ],
+                  "headers": [
+                    "Content-Type",
+                    "X-Amz-Date",
+                    "Authorization",
+                    "X-Api-Key",
+                    "X-Amz-Security-Token",
+                    "X-Amz-User-Agent"
+                  ],
+                  "allowCredentials": "<REDACTED>"
+                },
+                "request": {
+                  "schemas": {
+                    "application/json": {
+                      "type": "object",
+                      "properties": {
+                        "sessionId": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 100
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 4000
+                        }
+                      },
+                      "required": [
+                        "sessionId",
+                        "message"
+                      ]
+                    }
+                  }
+                },
+                "integration": "AWS_PROXY"
+              }
+            }
+          ],
+          "environment": {
+            "MONGODB_URI": "mongodb+srv://QureNoteApp:UgSEZ0EG46UtVXkW@serverlessinstance0.va5xkum.mongodb.net/DevQureNote?retryWrites=true&w=majority",
+            "OPENAI_API_KEY": "<REDACTED>",
+            "PINECONE_API_KEY": "<REDACTED>",
+            "PINECONE_ENVIRONMENT": "us-east-1-aws",
+            "PINECONE_INDEX_NAME": "appointment-chatbot",
+            "LOG_LEVEL": "info",
+            "STAGE": "prod"
+          },
+          "tags": {
+            "Function": "chat-handler",
+            "Environment": "prod"
+          },
+          "tracing": "Active",
+          "logRetentionInDays": 14,
+          "name": "serverless-chat-app-prod-chat",
+          "package": {},
+          "memory": 1024,
+          "runtime": "nodejs18.x",
+          "vpc": {},
+          "versionLogicalId": "ChatLambdaVersionieOqAYO3TaSuGGTUoXfJ5PguaQmsQO23KJkotbIi7M"
+        },
+        "health": {
+          "handler": "src/handlers/health.handler",
+          "timeout": 10,
+          "memorySize": 256,
+          "events": [
+            {
+              "http": {
+                "path": "health",
+                "method": "get",
+                "cors": {
+                  "origin": "*",
+                  "methods": [
+                    "OPTIONS",
+                    "GET"
+                  ],
+                  "headers": [
+                    "Content-Type",
+                    "X-Amz-Date",
+                    "Authorization",
+                    "X-Api-Key",
+                    "X-Amz-Security-Token",
+                    "X-Amz-User-Agent",
+                    "X-Amzn-Trace-Id"
+                  ],
+                  "allowCredentials": "<REDACTED>"
+                },
+                "integration": "AWS_PROXY"
+              }
+            }
+          ],
+          "environment": {
+            "STAGE": "prod"
+          },
+          "tags": {
+            "Function": "health-check",
+            "Environment": "prod"
+          },
+          "name": "serverless-chat-app-prod-health",
+          "package": {},
+          "memory": 256,
+          "runtime": "nodejs18.x",
+          "vpc": {},
+          "versionLogicalId": "HealthLambdaVersion7oGh6wgERS2jDzKjvDWbs5DTWY0NWRQzju5RYaAuR4"
+        }
+      },
+      "plugins": [
+        "serverless-offline",
+        "serverless-dotenv-plugin"
+      ],
+      "custom": {
+        "serverless-offline": {
+          "httpPort": 3000,
+          "lambdaPort": 3002,
+          "noPrependStageInUrl": true,
+          "useChildProcesses": true
+        },
+        "dotenv": {
+          "path": ".env.prod",
+          "logging": false
+        }
+      }
+    },
+    "provider": {
+      "name": "aws",
+      "runtime": "nodejs18.x",
+      "stage": "prod",
+      "region": "us-east-1",
+      "timeout": 30,
+      "memorySize": 1024,
+      "environment": {
+        "NODE_ENV": "production",
+        "MONGODB_URI": "mongodb+srv://QureNoteApp:UgSEZ0EG46UtVXkW@serverlessinstance0.va5xkum.mongodb.net/DevQureNote?retryWrites=true&w=majority",
+        "OPENAI_API_KEY": "<REDACTED>",
+        "PINECONE_API_KEY": "<REDACTED>",
+        "PINECONE_ENVIRONMENT": "us-east-1-aws",
+        "PINECONE_INDEX_NAME": "appointment-chatbot",
+        "LOG_LEVEL": "info",
+        "STAGE": "prod",
+        "VPC_SECURITY_GROUP_ID": "sg-00000000000000000",
+        "VPC_SUBNET_ID_1": "subnet-00000000000000000",
+        "VPC_SUBNET_ID_2": "subnet-00000000000000000",
+        "RESERVED_CONCURRENCY": "1000",
+        "ALLOWED_ORIGINS": "*",
+        "OWNER": "dev-team"
+      },
+      "iam": {
+        "role": {
+          "statements": [
+            {
+              "Effect": "Allow",
+              "Action": [
+                "logs:CreateLogGroup",
+                "logs:CreateLogStream",
+                "logs:PutLogEvents"
+              ],
+              "Resource": "arn:aws:logs:*:*:*"
+            },
+            {
+              "Effect": "Allow",
+              "Action": [
+                "xray:PutTraceSegments",
+                "xray:PutTelemetryRecords"
+              ],
+              "Resource": "*"
+            }
+          ]
+        }
+      },
+      "tags": {
+        "Environment": "prod",
+        "Service": "chat-app",
+        "ManagedBy": "serverless",
+        "Project": "serverless-chat",
+        "Owner": "dev-team"
+      },
+      "versionFunctions": true,
+      "compiledCloudFormationTemplate": {
+        "AWSTemplateFormatVersion": "2010-09-09",
+        "Description": "The AWS CloudFormation template for this Serverless application",
+        "Resources": {
+          "ChatLogGroup": {
+            "Type": "AWS::Logs::LogGroup",
+            "Properties": {
+              "LogGroupName": "/aws/lambda/serverless-chat-app-prod-chat",
+              "RetentionInDays": 14
+            }
+          },
+          "HealthLogGroup": {
+            "Type": "AWS::Logs::LogGroup",
+            "Properties": {
+              "LogGroupName": "/aws/lambda/serverless-chat-app-prod-health"
+            }
+          },
+          "IamRoleLambdaExecution": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+              "AssumeRolePolicyDocument": {
+                "Version": "2012-10-17",
+                "Statement": [
+                  {
+                    "Effect": "Allow",
+                    "Principal": {
+                      "Service": [
+                        "lambda.amazonaws.com"
+                      ]
+                    },
+                    "Action": [
+                      "sts:AssumeRole"
+                    ]
+                  }
+                ]
+              },
+              "Policies": [
+                {
+                  "PolicyName": {
+                    "Fn::Join": [
+                      "-",
+                      [
+                        "serverless-chat-app",
+                        "prod",
+                        "lambda"
+                      ]
+                    ]
+                  },
+                  "PolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                      {
+                        "Effect": "Allow",
+                        "Action": [
+                          "logs:CreateLogStream",
+                          "logs:CreateLogGroup",
+                          "logs:TagResource"
+                        ],
+                        "Resource": [
+                          {
+                            "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/serverless-chat-app-prod*:*"
+                          }
+                        ]
+                      },
+                      {
+                        "Effect": "Allow",
+                        "Action": [
+                          "logs:PutLogEvents"
+                        ],
+                        "Resource": [
+                          {
+                            "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/serverless-chat-app-prod*:*:*"
+                          }
+                        ]
+                      },
+                      {
+                        "Effect": "Allow",
+                        "Action": [
+                          "logs:CreateLogGroup",
+                          "logs:CreateLogStream",
+                          "logs:PutLogEvents"
+                        ],
+                        "Resource": "arn:aws:logs:*:*:*"
+                      },
+                      {
+                        "Effect": "Allow",
+                        "Action": [
+                          "xray:PutTraceSegments",
+                          "xray:PutTelemetryRecords"
+                        ],
+                        "Resource": "*"
+                      },
+                      {
+                        "Effect": "Allow",
+                        "Action": [
+                          "xray:PutTraceSegments",
+                          "xray:PutTelemetryRecords"
+                        ],
+                        "Resource": [
+                          "*"
+                        ]
+                      }
+                    ]
+                  }
+                }
+              ],
+              "Path": "/",
+              "RoleName": {
+                "Fn::Join": [
+                  "-",
+                  [
+                    "serverless-chat-app",
+                    "prod",
+                    {
+                      "Ref": "AWS::Region"
+                    },
+                    "lambdaRole"
+                  ]
+                ]
+              }
+            }
+          },
+          "ChatLambdaFunction": {
+            "Type": "AWS::Lambda::Function",
+            "Properties": {
+              "Code": {
+                "S3Bucket": "serverless-framework-deployments-us-east-1-f3884fb4-c163",
+                "S3Key": "serverless/serverless-chat-app/prod/1751307254617-2025-06-30T18:14:14.617Z/serverless-chat-app.zip"
+              },
+              "Handler": "src/handlers/chat.handler",
+              "Runtime": "nodejs18.x",
+              "FunctionName": "serverless-chat-app-prod-chat",
+              "MemorySize": 1024,
+              "Timeout": 30,
+              "Tags": [
+                {
+                  "Key": "Environment",
+                  "Value": "prod"
+                },
+                {
+                  "Key": "Service",
+                  "Value": "chat-app"
+                },
+                {
+                  "Key": "ManagedBy",
+                  "Value": "serverless"
+                },
+                {
+                  "Key": "Project",
+                  "Value": "serverless-chat"
+                },
+                {
+                  "Key": "Owner",
+                  "Value": "dev-team"
+                },
+                {
+                  "Key": "Function",
+                  "Value": "chat-handler"
+                }
+              ],
+              "TracingConfig": {
+                "Mode": "Active"
+              },
+              "Environment": {
+                "Variables": {
+                  "NODE_ENV": "production",
+                  "MONGODB_URI": "mongodb+srv://QureNoteApp:UgSEZ0EG46UtVXkW@serverlessinstance0.va5xkum.mongodb.net/DevQureNote?retryWrites=true&w=majority",
+                  "OPENAI_API_KEY": "<REDACTED>",
+                  "PINECONE_API_KEY": "<REDACTED>",
+                  "PINECONE_ENVIRONMENT": "us-east-1-aws",
+                  "PINECONE_INDEX_NAME": "appointment-chatbot",
+                  "LOG_LEVEL": "info",
+                  "STAGE": "prod",
+                  "VPC_SECURITY_GROUP_ID": "sg-00000000000000000",
+                  "VPC_SUBNET_ID_1": "subnet-00000000000000000",
+                  "VPC_SUBNET_ID_2": "subnet-00000000000000000",
+                  "RESERVED_CONCURRENCY": "1000",
+                  "ALLOWED_ORIGINS": "*",
+                  "OWNER": "dev-team"
+                }
+              },
+              "Role": {
+                "Fn::GetAtt": [
+                  "IamRoleLambdaExecution",
+                  "Arn"
+                ]
+              }
+            },
+            "DependsOn": [
+              "ChatLogGroup"
+            ]
+          },
+          "HealthLambdaFunction": {
+            "Type": "AWS::Lambda::Function",
+            "Properties": {
+              "Code": {
+                "S3Bucket": "serverless-framework-deployments-us-east-1-f3884fb4-c163",
+                "S3Key": "serverless/serverless-chat-app/prod/1751307254617-2025-06-30T18:14:14.617Z/serverless-chat-app.zip"
+              },
+              "Handler": "src/handlers/health.handler",
+              "Runtime": "nodejs18.x",
+              "FunctionName": "serverless-chat-app-prod-health",
+              "MemorySize": 256,
+              "Timeout": 10,
+              "Tags": [
+                {
+                  "Key": "Environment",
+                  "Value": "prod"
+                },
+                {
+                  "Key": "Service",
+                  "Value": "chat-app"
+                },
+                {
+                  "Key": "ManagedBy",
+                  "Value": "serverless"
+                },
+                {
+                  "Key": "Project",
+                  "Value": "serverless-chat"
+                },
+                {
+                  "Key": "Owner",
+                  "Value": "dev-team"
+                },
+                {
+                  "Key": "Function",
+                  "Value": "health-check"
+                }
+              ],
+              "Environment": {
+                "Variables": {
+                  "NODE_ENV": "production",
+                  "MONGODB_URI": "mongodb+srv://QureNoteApp:UgSEZ0EG46UtVXkW@serverlessinstance0.va5xkum.mongodb.net/DevQureNote?retryWrites=true&w=majority",
+                  "OPENAI_API_KEY": "<REDACTED>",
+                  "PINECONE_API_KEY": "<REDACTED>",
+                  "PINECONE_ENVIRONMENT": "us-east-1-aws",
+                  "PINECONE_INDEX_NAME": "appointment-chatbot",
+                  "LOG_LEVEL": "info",
+                  "STAGE": "prod",
+                  "VPC_SECURITY_GROUP_ID": "sg-00000000000000000",
+                  "VPC_SUBNET_ID_1": "subnet-00000000000000000",
+                  "VPC_SUBNET_ID_2": "subnet-00000000000000000",
+                  "RESERVED_CONCURRENCY": "1000",
+                  "ALLOWED_ORIGINS": "*",
+                  "OWNER": "dev-team"
+                }
+              },
+              "Role": {
+                "Fn::GetAtt": [
+                  "IamRoleLambdaExecution",
+                  "Arn"
+                ]
+              }
+            },
+            "DependsOn": [
+              "HealthLogGroup"
+            ]
+          },
+          "ChatLambdaVersionieOqAYO3TaSuGGTUoXfJ5PguaQmsQO23KJkotbIi7M": {
+            "Type": "AWS::Lambda::Version",
+            "DeletionPolicy": "Retain",
+            "Properties": {
+              "FunctionName": {
+                "Ref": "ChatLambdaFunction"
+              },
+              "CodeSha256": "IE0Hngb21vJ5Tv52gL5Qfq0C6Fqqu8soz+CcqCZxTJg="
+            }
+          },
+          "HealthLambdaVersion7oGh6wgERS2jDzKjvDWbs5DTWY0NWRQzju5RYaAuR4": {
+            "Type": "AWS::Lambda::Version",
+            "DeletionPolicy": "Retain",
+            "Properties": {
+              "FunctionName": {
+                "Ref": "HealthLambdaFunction"
+              },
+              "CodeSha256": "IE0Hngb21vJ5Tv52gL5Qfq0C6Fqqu8soz+CcqCZxTJg="
+            }
+          },
+          "ApiGatewayRestApi": {
+            "Type": "AWS::ApiGateway::RestApi",
+            "Properties": {
+              "Name": "prod-serverless-chat-app",
+              "EndpointConfiguration": {
+                "Types": [
+                  "EDGE"
+                ]
+              },
+              "Policy": ""
+            }
+          },
+          "ApiGatewayResourceChat": {
+            "Type": "AWS::ApiGateway::Resource",
+            "Properties": {
+              "ParentId": {
+                "Fn::GetAtt": [
+                  "ApiGatewayRestApi",
+                  "RootResourceId"
+                ]
+              },
+              "PathPart": "chat",
+              "RestApiId": {
+                "Ref": "ApiGatewayRestApi"
+              }
+            }
+          },
+          "ApiGatewayResourceHealth": {
+            "Type": "AWS::ApiGateway::Resource",
+            "Properties": {
+              "ParentId": {
+                "Fn::GetAtt": [
+                  "ApiGatewayRestApi",
+                  "RootResourceId"
+                ]
+              },
+              "PathPart": "health",
+              "RestApiId": {
+                "Ref": "ApiGatewayRestApi"
+              }
+            }
+          },
+          "ApiGatewayMethodChatOptions": {
+            "Type": "AWS::ApiGateway::Method",
+            "Properties": {
+              "AuthorizationType": "NONE",
+              "HttpMethod": "OPTIONS",
+              "MethodResponses": [
+                {
+                  "StatusCode": "200",
+                  "ResponseParameters": {
+                    "method.response.header.Access-Control-Allow-Origin": true,
+                    "method.response.header.Access-Control-Allow-Headers": true,
+                    "method.response.header.Access-Control-Allow-Methods": true
+                  },
+                  "ResponseModels": {}
+                }
+              ],
+              "RequestParameters": {},
+              "Integration": {
+                "Type": "MOCK",
+                "RequestTemplates": {
+                  "application/json": "{statusCode:200}"
+                },
+                "ContentHandling": "CONVERT_TO_TEXT",
+                "IntegrationResponses": [
+                  {
+                    "StatusCode": "200",
+                    "ResponseParameters": {
+                      "method.response.header.Access-Control-Allow-Origin": "'*'",
+                      "method.response.header.Access-Control-Allow-Headers": "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Amz-User-Agent'",
+                      "method.response.header.Access-Control-Allow-Methods": "'POST,OPTIONS'"
+                    },
+                    "ResponseTemplates": {
+                      "application/json": ""
+                    }
+                  }
+                ]
+              },
+              "ResourceId": {
+                "Ref": "ApiGatewayResourceChat"
+              },
+              "RestApiId": {
+                "Ref": "ApiGatewayRestApi"
+              }
+            }
+          },
+          "ApiGatewayMethodHealthOptions": {
+            "Type": "AWS::ApiGateway::Method",
+            "Properties": {
+              "AuthorizationType": "NONE",
+              "HttpMethod": "OPTIONS",
+              "MethodResponses": [
+                {
+                  "StatusCode": "200",
+                  "ResponseParameters": {
+                    "method.response.header.Access-Control-Allow-Origin": true,
+                    "method.response.header.Access-Control-Allow-Headers": true,
+                    "method.response.header.Access-Control-Allow-Methods": true
+                  },
+                  "ResponseModels": {}
+                }
+              ],
+              "RequestParameters": {},
+              "Integration": {
+                "Type": "MOCK",
+                "RequestTemplates": {
+                  "application/json": "{statusCode:200}"
+                },
+                "ContentHandling": "CONVERT_TO_TEXT",
+                "IntegrationResponses": [
+                  {
+                    "StatusCode": "200",
+                    "ResponseParameters": {
+                      "method.response.header.Access-Control-Allow-Origin": "'*'",
+                      "method.response.header.Access-Control-Allow-Headers": "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Amz-User-Agent,X-Amzn-Trace-Id'",
+                      "method.response.header.Access-Control-Allow-Methods": "'OPTIONS,GET'"
+                    },
+                    "ResponseTemplates": {
+                      "application/json": ""
+                    }
+                  }
+                ]
+              },
+              "ResourceId": {
+                "Ref": "ApiGatewayResourceHealth"
+              },
+              "RestApiId": {
+                "Ref": "ApiGatewayRestApi"
+              }
+            }
+          },
+          "ApiGatewayMethodChatPost": {
+            "Type": "AWS::ApiGateway::Method",
+            "Properties": {
+              "HttpMethod": "POST",
+              "RequestParameters": {},
+              "ResourceId": {
+                "Ref": "ApiGatewayResourceChat"
+              },
+              "RestApiId": {
+                "Ref": "ApiGatewayRestApi"
+              },
+              "ApiKeyRequired": "<REDACTED>",
+              "AuthorizationType": "NONE",
+              "Integration": {
+                "IntegrationHttpMethod": "POST",
+                "Type": "AWS_PROXY",
+                "Uri": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:",
+                      {
+                        "Ref": "AWS::Partition"
+                      },
+                      ":apigateway:",
+                      {
+                        "Ref": "AWS::Region"
+                      },
+                      ":lambda:path/2015-03-31/functions/",
+                      {
+                        "Fn::GetAtt": [
+                          "ChatLambdaFunction",
+                          "Arn"
+                        ]
+                      },
+                      "/invocations"
+                    ]
+                  ]
+                }
+              },
+              "MethodResponses": [],
+              "RequestValidatorId": {
+                "Ref": "ApiGatewayServerlesschatappRequestValidator"
+              },
+              "RequestModels": {
+                "application/json": {
+                  "Ref": "ApiGatewayMethodChatPostApplicationJsonModel"
+                }
+              }
+            },
+            "DependsOn": [
+              "ChatLambdaPermissionApiGateway"
+            ]
+          },
+          "ApiGatewayMethodHealthGet": {
+            "Type": "AWS::ApiGateway::Method",
+            "Properties": {
+              "HttpMethod": "GET",
+              "RequestParameters": {},
+              "ResourceId": {
+                "Ref": "ApiGatewayResourceHealth"
+              },
+              "RestApiId": {
+                "Ref": "ApiGatewayRestApi"
+              },
+              "ApiKeyRequired": "<REDACTED>",
+              "AuthorizationType": "NONE",
+              "Integration": {
+                "IntegrationHttpMethod": "POST",
+                "Type": "AWS_PROXY",
+                "Uri": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:",
+                      {
+                        "Ref": "AWS::Partition"
+                      },
+                      ":apigateway:",
+                      {
+                        "Ref": "AWS::Region"
+                      },
+                      ":lambda:path/2015-03-31/functions/",
+                      {
+                        "Fn::GetAtt": [
+                          "HealthLambdaFunction",
+                          "Arn"
+                        ]
+                      },
+                      "/invocations"
+                    ]
+                  ]
+                }
+              },
+              "MethodResponses": []
+            },
+            "DependsOn": [
+              "HealthLambdaPermissionApiGateway"
+            ]
+          },
+          "ApiGatewayServerlesschatappRequestValidator": {
+            "Type": "AWS::ApiGateway::RequestValidator",
+            "Properties": {
+              "RestApiId": {
+                "Ref": "ApiGatewayRestApi"
+              },
+              "ValidateRequestBody": true,
+              "ValidateRequestParameters": true,
+              "Name": "serverless-chat-app-prod | Validate request body and querystring parameters"
+            }
+          },
+          "ApiGatewayMethodChatPostApplicationJsonModel": {
+            "Type": "AWS::ApiGateway::Model",
+            "Properties": {
+              "RestApiId": {
+                "Ref": "ApiGatewayRestApi"
+              },
+              "ContentType": "application/json",
+              "Schema": {
+                "type": "object",
+                "properties": {
+                  "sessionId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  },
+                  "message": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 4000
+                  }
+                },
+                "required": [
+                  "sessionId",
+                  "message"
+                ]
+              }
+            }
+          },
+          "ApiGatewayDeployment1751307233965": {
+            "Type": "AWS::ApiGateway::Deployment",
+            "Properties": {
+              "RestApiId": {
+                "Ref": "ApiGatewayRestApi"
+              },
+              "StageName": "prod"
+            },
+            "DependsOn": [
+              "ApiGatewayMethodChatOptions",
+              "ApiGatewayMethodHealthOptions",
+              "ApiGatewayMethodChatPost",
+              "ApiGatewayMethodHealthGet"
+            ]
+          },
+          "ChatLambdaPermissionApiGateway": {
+            "Type": "AWS::Lambda::Permission",
+            "Properties": {
+              "FunctionName": {
+                "Fn::GetAtt": [
+                  "ChatLambdaFunction",
+                  "Arn"
+                ]
+              },
+              "Action": "lambda:InvokeFunction",
+              "Principal": "apigateway.amazonaws.com",
+              "SourceArn": {
+                "Fn::Join": [
+                  "",
+                  [
+                    "arn:",
+                    {
+                      "Ref": "AWS::Partition"
+                    },
+                    ":execute-api:",
+                    {
+                      "Ref": "AWS::Region"
+                    },
+                    ":",
+                    {
+                      "Ref": "AWS::AccountId"
+                    },
+                    ":",
+                    {
+                      "Ref": "ApiGatewayRestApi"
+                    },
+                    "/*/*"
+                  ]
+                ]
+              }
+            }
+          },
+          "HealthLambdaPermissionApiGateway": {
+            "Type": "AWS::Lambda::Permission",
+            "Properties": {
+              "FunctionName": {
+                "Fn::GetAtt": [
+                  "HealthLambdaFunction",
+                  "Arn"
+                ]
+              },
+              "Action": "lambda:InvokeFunction",
+              "Principal": "apigateway.amazonaws.com",
+              "SourceArn": {
+                "Fn::Join": [
+                  "",
+                  [
+                    "arn:",
+                    {
+                      "Ref": "AWS::Partition"
+                    },
+                    ":execute-api:",
+                    {
+                      "Ref": "AWS::Region"
+                    },
+                    ":",
+                    {
+                      "Ref": "AWS::AccountId"
+                    },
+                    ":",
+                    {
+                      "Ref": "ApiGatewayRestApi"
+                    },
+                    "/*/*"
+                  ]
+                ]
+              }
+            }
+          }
+        },
+        "Outputs": {
+          "ServerlessDeploymentBucketName": {
+            "Value": "serverless-framework-deployments-us-east-1-f3884fb4-c163",
+            "Export": {
+              "Name": "sls-serverless-chat-app-prod-ServerlessDeploymentBucketName"
+            }
+          },
+          "ChatLambdaFunctionQualifiedArn": {
+            "Description": "Current Lambda function version",
+            "Value": {
+              "Ref": "ChatLambdaVersionieOqAYO3TaSuGGTUoXfJ5PguaQmsQO23KJkotbIi7M"
+            },
+            "Export": {
+              "Name": "sls-serverless-chat-app-prod-ChatLambdaFunctionQualifiedArn"
+            }
+          },
+          "HealthLambdaFunctionQualifiedArn": {
+            "Description": "Current Lambda function version",
+            "Value": {
+              "Ref": "HealthLambdaVersion7oGh6wgERS2jDzKjvDWbs5DTWY0NWRQzju5RYaAuR4"
+            },
+            "Export": {
+              "Name": "sls-serverless-chat-app-prod-HealthLambdaFunctionQualifiedArn"
+            }
+          },
+          "ServiceEndpoint": {
+            "Description": "URL of the service endpoint",
+            "Value": {
+              "Fn::Join": [
+                "",
+                [
+                  "https://",
+                  {
+                    "Ref": "ApiGatewayRestApi"
+                  },
+                  ".execute-api.",
+                  {
+                    "Ref": "AWS::Region"
+                  },
+                  ".",
+                  {
+                    "Ref": "AWS::URLSuffix"
+                  },
+                  "/prod"
+                ]
+              ]
+            },
+            "Export": {
+              "Name": "sls-serverless-chat-app-prod-ServiceEndpoint"
+            }
+          }
+        }
+      },
+      "vpc": {}
+    },
+    "dashboard": {
+      "isEnabledForService": false,
+      "requiredAuthentication": false,
+      "orgFeaturesInUse": null,
+      "orgObservabilityIntegrations": null,
+      "serviceAppId": null,
+      "serviceProvider": null,
+      "instanceParameters": null
+    },
+    "serviceRawFile": "service: serverless-chat-app\n\nframeworkVersion: '4'\n\nprovider:\n  name: aws\n  runtime: nodejs18.x\n  stage: ${opt:stage, 'dev'}\n  region: ${opt:region, 'us-east-1'}\n  timeout: 30\n  memorySize: 1024\n  environment:\n    NODE_ENV: ${env:NODE_ENV, 'development'}\n    MONGODB_URI: ${env:MONGODB_URI, 'mongodb://localhost:27017/chat-app'}\n    OPENAI_API_KEY: ${env:OPENAI_API_KEY, ''}\n    PINECONE_API_KEY: ${env:PINECONE_API_KEY, ''}\n    PINECONE_ENVIRONMENT: ${env:PINECONE_ENVIRONMENT, ''}\n    PINECONE_INDEX_NAME: ${env:PINECONE_INDEX_NAME, 'appointment-chatbot'}\n    LOG_LEVEL: ${env:LOG_LEVEL, 'info'}\n  iam:\n    role:\n      statements:\n        - Effect: Allow\n          Action:\n            - logs:CreateLogGroup\n            - logs:CreateLogStream\n            - logs:PutLogEvents\n          Resource: \"arn:aws:logs:*:*:*\"\n        - Effect: Allow\n          Action:\n            - xray:PutTraceSegments\n            - xray:PutTelemetryRecords\n          Resource: \"*\"\n  tags:\n    Environment: ${self:provider.stage}\n    Service: chat-app\n    ManagedBy: serverless\n    Project: serverless-chat\n    Owner: ${env:OWNER, 'dev-team'}\n\npackage:\n  exclude:\n    - chat-frontend/**\n    - .git/**\n    - .gitignore\n    - README.md\n    - scripts/**\n    - tests/**\n    - package-lock.json\n    - .vscode/**\n    - logs/**\n    - .serverless/**\n    - .webpack/**\n    - coverage/**\n    - .nyc_output/**\n    - .eslintrc.js\n    - .prettierrc\n    - .prettierignore\n    - .editorconfig\n    - .babelrc\n    - .babelrc.js\n    - babel.config.js\n    - webpack.config.js\n    - jest.config.js\n    - tsconfig.json\n    - .typescript/**\n    - .DS_Store\n    - Thumbs.db\n\nfunctions:\n  chat:\n    handler: src/handlers/chat.handler\n    timeout: 30\n    memorySize: 1024\n    events:\n      - http:\n          path: chat\n          method: post\n          cors:\n            origin: ${env:ALLOWED_ORIGINS, '*'}\n            headers:\n              - Content-Type\n              - X-Amz-Date\n              - Authorization\n              - X-Api-Key\n              - X-Amz-Security-Token\n              - X-Amz-User-Agent\n            methods:\n              - POST\n              - OPTIONS\n            allowCredentials: false\n          request:\n            schemas:\n              application/json:\n                type: object\n                properties:\n                  sessionId:\n                    type: string\n                    minLength: 1\n                    maxLength: 100\n                  message:\n                    type: string\n                    minLength: 1\n                    maxLength: 4000\n                required:\n                  - sessionId\n                  - message\n    environment:\n      MONGODB_URI: ${env:MONGODB_URI, 'mongodb://localhost:27017/chat-app'}\n      OPENAI_API_KEY: ${env:OPENAI_API_KEY, ''}\n      PINECONE_API_KEY: ${env:PINECONE_API_KEY, ''}\n      PINECONE_ENVIRONMENT: ${env:PINECONE_ENVIRONMENT, ''}\n      PINECONE_INDEX_NAME: ${env:PINECONE_INDEX_NAME, 'appointment-chatbot'}\n      LOG_LEVEL: ${env:LOG_LEVEL, 'info'}\n      STAGE: ${self:provider.stage}\n    tags:\n      Function: chat-handler\n      Environment: ${self:provider.stage}\n    tracing: Active\n    logRetentionInDays: 14\n\n  health:\n    handler: src/handlers/health.handler\n    timeout: 10\n    memorySize: 256\n    events:\n      - http:\n          path: health\n          method: get\n          cors: true\n    environment:\n      STAGE: ${self:provider.stage}\n    tags:\n      Function: health-check\n      Environment: ${self:provider.stage}\n\nplugins:\n  - serverless-offline\n  - serverless-dotenv-plugin\n\ncustom:\n  serverless-offline:\n    httpPort: 3000\n    lambdaPort: 3002\n    noPrependStageInUrl: true\n    useChildProcesses: true\n  dotenv:\n    path: .env.${opt:stage, 'dev'}\n    logging: false ",
+    "command": [
+      "deploy"
+    ],
+    "options": {
+      "stage": "prod"
+    },
+    "orgId": "7aed2ce7-4ce8-4c1d-8c4b-25cedca9b71b",
+    "orgName": "viceroy",
+    "userId": "jjj5b9GJ8qD7FLf2QT",
+    "userName": "viceroy",
+    "serviceProviderAwsAccountId": "905418467742",
+    "serviceProviderAwsCfStackName": "serverless-chat-app-prod",
+    "serviceProviderAwsCfStackId": "arn:aws:cloudformation:us-east-1:905418467742:stack/serverless-chat-app-prod/09c72530-5448-11f0-a7b7-12c72063c265",
+    "serviceProviderAwsCfStackCreated": "2025-06-28T17:48:02.818Z",
+    "serviceProviderAwsCfStackUpdated": "2025-06-30T17:30:00.010Z",
+    "serviceProviderAwsCfStackStatus": "UPDATE_COMPLETE",
+    "serviceProviderAwsCfStackOutputs": [
+      {
+        "OutputKey": "ChatLambdaFunctionQualifiedArn",
+        "OutputValue": "arn:aws:lambda:us-east-1:905418467742:function:serverless-chat-app-prod-chat:14",
+        "Description": "Current Lambda function version",
+        "ExportName": "sls-serverless-chat-app-prod-ChatLambdaFunctionQualifiedArn"
+      },
+      {
+        "OutputKey": "HealthLambdaFunctionQualifiedArn",
+        "OutputValue": "arn:aws:lambda:us-east-1:905418467742:function:serverless-chat-app-prod-health:14",
+        "Description": "Current Lambda function version",
+        "ExportName": "sls-serverless-chat-app-prod-HealthLambdaFunctionQualifiedArn"
+      },
+      {
+        "OutputKey": "ServiceEndpoint",
+        "OutputValue": "https://h1q0720gz9.execute-api.us-east-1.amazonaws.com/prod",
+        "Description": "URL of the service endpoint",
+        "ExportName": "sls-serverless-chat-app-prod-ServiceEndpoint"
+      },
+      {
+        "OutputKey": "ServerlessDeploymentBucketName",
+        "OutputValue": "serverless-framework-deployments-us-east-1-f3884fb4-c163",
+        "ExportName": "sls-serverless-chat-app-prod-ServerlessDeploymentBucketName"
+      }
+    ],
+    "compiledCloudFormationTemplate": {
+      "AWSTemplateFormatVersion": "2010-09-09",
+      "Description": "The AWS CloudFormation template for this Serverless application",
+      "Resources": {
+        "ChatLogGroup": {
+          "Type": "AWS::Logs::LogGroup",
+          "Properties": {
+            "LogGroupName": "/aws/lambda/serverless-chat-app-prod-chat",
+            "RetentionInDays": 14
+          }
+        },
+        "HealthLogGroup": {
+          "Type": "AWS::Logs::LogGroup",
+          "Properties": {
+            "LogGroupName": "/aws/lambda/serverless-chat-app-prod-health"
+          }
+        },
+        "IamRoleLambdaExecution": {
+          "Type": "AWS::IAM::Role",
+          "Properties": {
+            "AssumeRolePolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Principal": {
+                    "Service": [
+                      "lambda.amazonaws.com"
+                    ]
+                  },
+                  "Action": [
+                    "sts:AssumeRole"
+                  ]
+                }
+              ]
+            },
+            "Policies": [
+              {
+                "PolicyName": {
+                  "Fn::Join": [
+                    "-",
+                    [
+                      "serverless-chat-app",
+                      "prod",
+                      "lambda"
+                    ]
+                  ]
+                },
+                "PolicyDocument": {
+                  "Version": "2012-10-17",
+                  "Statement": [
+                    {
+                      "Effect": "Allow",
+                      "Action": [
+                        "logs:CreateLogStream",
+                        "logs:CreateLogGroup",
+                        "logs:TagResource"
+                      ],
+                      "Resource": [
+                        {
+                          "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/serverless-chat-app-prod*:*"
+                        }
+                      ]
+                    },
+                    {
+                      "Effect": "Allow",
+                      "Action": [
+                        "logs:PutLogEvents"
+                      ],
+                      "Resource": [
+                        {
+                          "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/serverless-chat-app-prod*:*:*"
+                        }
+                      ]
+                    },
+                    {
+                      "Effect": "Allow",
+                      "Action": [
+                        "logs:CreateLogGroup",
+                        "logs:CreateLogStream",
+                        "logs:PutLogEvents"
+                      ],
+                      "Resource": "arn:aws:logs:*:*:*"
+                    },
+                    {
+                      "Effect": "Allow",
+                      "Action": [
+                        "xray:PutTraceSegments",
+                        "xray:PutTelemetryRecords"
+                      ],
+                      "Resource": "*"
+                    },
+                    {
+                      "Effect": "Allow",
+                      "Action": [
+                        "xray:PutTraceSegments",
+                        "xray:PutTelemetryRecords"
+                      ],
+                      "Resource": [
+                        "*"
+                      ]
+                    }
+                  ]
+                }
+              }
+            ],
+            "Path": "/",
+            "RoleName": {
+              "Fn::Join": [
+                "-",
+                [
+                  "serverless-chat-app",
+                  "prod",
+                  {
+                    "Ref": "AWS::Region"
+                  },
+                  "lambdaRole"
+                ]
+              ]
+            }
+          }
+        },
+        "ChatLambdaFunction": {
+          "Type": "AWS::Lambda::Function",
+          "Properties": {
+            "Code": {
+              "S3Bucket": "serverless-framework-deployments-us-east-1-f3884fb4-c163",
+              "S3Key": "serverless/serverless-chat-app/prod/1751307254617-2025-06-30T18:14:14.617Z/serverless-chat-app.zip"
+            },
+            "Handler": "src/handlers/chat.handler",
+            "Runtime": "nodejs18.x",
+            "FunctionName": "serverless-chat-app-prod-chat",
+            "MemorySize": 1024,
+            "Timeout": 30,
+            "Tags": [
+              {
+                "Key": "Environment",
+                "Value": "prod"
+              },
+              {
+                "Key": "Service",
+                "Value": "chat-app"
+              },
+              {
+                "Key": "ManagedBy",
+                "Value": "serverless"
+              },
+              {
+                "Key": "Project",
+                "Value": "serverless-chat"
+              },
+              {
+                "Key": "Owner",
+                "Value": "dev-team"
+              },
+              {
+                "Key": "Function",
+                "Value": "chat-handler"
+              }
+            ],
+            "TracingConfig": {
+              "Mode": "Active"
+            },
+            "Environment": {
+              "Variables": {
+                "NODE_ENV": "production",
+                "MONGODB_URI": "mongodb+srv://QureNoteApp:UgSEZ0EG46UtVXkW@serverlessinstance0.va5xkum.mongodb.net/DevQureNote?retryWrites=true&w=majority",
+                "OPENAI_API_KEY": "<REDACTED>",
+                "PINECONE_API_KEY": "<REDACTED>",
+                "PINECONE_ENVIRONMENT": "us-east-1-aws",
+                "PINECONE_INDEX_NAME": "appointment-chatbot",
+                "LOG_LEVEL": "info",
+                "STAGE": "prod",
+                "VPC_SECURITY_GROUP_ID": "sg-00000000000000000",
+                "VPC_SUBNET_ID_1": "subnet-00000000000000000",
+                "VPC_SUBNET_ID_2": "subnet-00000000000000000",
+                "RESERVED_CONCURRENCY": "1000",
+                "ALLOWED_ORIGINS": "*",
+                "OWNER": "dev-team"
+              }
+            },
+            "Role": {
+              "Fn::GetAtt": [
+                "IamRoleLambdaExecution",
+                "Arn"
+              ]
+            }
+          },
+          "DependsOn": [
+            "ChatLogGroup"
+          ]
+        },
+        "HealthLambdaFunction": {
+          "Type": "AWS::Lambda::Function",
+          "Properties": {
+            "Code": {
+              "S3Bucket": "serverless-framework-deployments-us-east-1-f3884fb4-c163",
+              "S3Key": "serverless/serverless-chat-app/prod/1751307254617-2025-06-30T18:14:14.617Z/serverless-chat-app.zip"
+            },
+            "Handler": "src/handlers/health.handler",
+            "Runtime": "nodejs18.x",
+            "FunctionName": "serverless-chat-app-prod-health",
+            "MemorySize": 256,
+            "Timeout": 10,
+            "Tags": [
+              {
+                "Key": "Environment",
+                "Value": "prod"
+              },
+              {
+                "Key": "Service",
+                "Value": "chat-app"
+              },
+              {
+                "Key": "ManagedBy",
+                "Value": "serverless"
+              },
+              {
+                "Key": "Project",
+                "Value": "serverless-chat"
+              },
+              {
+                "Key": "Owner",
+                "Value": "dev-team"
+              },
+              {
+                "Key": "Function",
+                "Value": "health-check"
+              }
+            ],
+            "Environment": {
+              "Variables": {
+                "NODE_ENV": "production",
+                "MONGODB_URI": "mongodb+srv://QureNoteApp:UgSEZ0EG46UtVXkW@serverlessinstance0.va5xkum.mongodb.net/DevQureNote?retryWrites=true&w=majority",
+                "OPENAI_API_KEY": "<REDACTED>",
+                "PINECONE_API_KEY": "<REDACTED>",
+                "PINECONE_ENVIRONMENT": "us-east-1-aws",
+                "PINECONE_INDEX_NAME": "appointment-chatbot",
+                "LOG_LEVEL": "info",
+                "STAGE": "prod",
+                "VPC_SECURITY_GROUP_ID": "sg-00000000000000000",
+                "VPC_SUBNET_ID_1": "subnet-00000000000000000",
+                "VPC_SUBNET_ID_2": "subnet-00000000000000000",
+                "RESERVED_CONCURRENCY": "1000",
+                "ALLOWED_ORIGINS": "*",
+                "OWNER": "dev-team"
+              }
+            },
+            "Role": {
+              "Fn::GetAtt": [
+                "IamRoleLambdaExecution",
+                "Arn"
+              ]
+            }
+          },
+          "DependsOn": [
+            "HealthLogGroup"
+          ]
+        },
+        "ChatLambdaVersionieOqAYO3TaSuGGTUoXfJ5PguaQmsQO23KJkotbIi7M": {
+          "Type": "AWS::Lambda::Version",
+          "DeletionPolicy": "Retain",
+          "Properties": {
+            "FunctionName": {
+              "Ref": "ChatLambdaFunction"
+            },
+            "CodeSha256": "IE0Hngb21vJ5Tv52gL5Qfq0C6Fqqu8soz+CcqCZxTJg="
+          }
+        },
+        "HealthLambdaVersion7oGh6wgERS2jDzKjvDWbs5DTWY0NWRQzju5RYaAuR4": {
+          "Type": "AWS::Lambda::Version",
+          "DeletionPolicy": "Retain",
+          "Properties": {
+            "FunctionName": {
+              "Ref": "HealthLambdaFunction"
+            },
+            "CodeSha256": "IE0Hngb21vJ5Tv52gL5Qfq0C6Fqqu8soz+CcqCZxTJg="
+          }
+        },
+        "ApiGatewayRestApi": {
+          "Type": "AWS::ApiGateway::RestApi",
+          "Properties": {
+            "Name": "prod-serverless-chat-app",
+            "EndpointConfiguration": {
+              "Types": [
+                "EDGE"
+              ]
+            },
+            "Policy": ""
+          }
+        },
+        "ApiGatewayResourceChat": {
+          "Type": "AWS::ApiGateway::Resource",
+          "Properties": {
+            "ParentId": {
+              "Fn::GetAtt": [
+                "ApiGatewayRestApi",
+                "RootResourceId"
+              ]
+            },
+            "PathPart": "chat",
+            "RestApiId": {
+              "Ref": "ApiGatewayRestApi"
+            }
+          }
+        },
+        "ApiGatewayResourceHealth": {
+          "Type": "AWS::ApiGateway::Resource",
+          "Properties": {
+            "ParentId": {
+              "Fn::GetAtt": [
+                "ApiGatewayRestApi",
+                "RootResourceId"
+              ]
+            },
+            "PathPart": "health",
+            "RestApiId": {
+              "Ref": "ApiGatewayRestApi"
+            }
+          }
+        },
+        "ApiGatewayMethodChatOptions": {
+          "Type": "AWS::ApiGateway::Method",
+          "Properties": {
+            "AuthorizationType": "NONE",
+            "HttpMethod": "OPTIONS",
+            "MethodResponses": [
+              {
+                "StatusCode": "200",
+                "ResponseParameters": {
+                  "method.response.header.Access-Control-Allow-Origin": true,
+                  "method.response.header.Access-Control-Allow-Headers": true,
+                  "method.response.header.Access-Control-Allow-Methods": true
+                },
+                "ResponseModels": {}
+              }
+            ],
+            "RequestParameters": {},
+            "Integration": {
+              "Type": "MOCK",
+              "RequestTemplates": {
+                "application/json": "{statusCode:200}"
+              },
+              "ContentHandling": "CONVERT_TO_TEXT",
+              "IntegrationResponses": [
+                {
+                  "StatusCode": "200",
+                  "ResponseParameters": {
+                    "method.response.header.Access-Control-Allow-Origin": "'*'",
+                    "method.response.header.Access-Control-Allow-Headers": "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Amz-User-Agent'",
+                    "method.response.header.Access-Control-Allow-Methods": "'POST,OPTIONS'"
+                  },
+                  "ResponseTemplates": {
+                    "application/json": ""
+                  }
+                }
+              ]
+            },
+            "ResourceId": {
+              "Ref": "ApiGatewayResourceChat"
+            },
+            "RestApiId": {
+              "Ref": "ApiGatewayRestApi"
+            }
+          }
+        },
+        "ApiGatewayMethodHealthOptions": {
+          "Type": "AWS::ApiGateway::Method",
+          "Properties": {
+            "AuthorizationType": "NONE",
+            "HttpMethod": "OPTIONS",
+            "MethodResponses": [
+              {
+                "StatusCode": "200",
+                "ResponseParameters": {
+                  "method.response.header.Access-Control-Allow-Origin": true,
+                  "method.response.header.Access-Control-Allow-Headers": true,
+                  "method.response.header.Access-Control-Allow-Methods": true
+                },
+                "ResponseModels": {}
+              }
+            ],
+            "RequestParameters": {},
+            "Integration": {
+              "Type": "MOCK",
+              "RequestTemplates": {
+                "application/json": "{statusCode:200}"
+              },
+              "ContentHandling": "CONVERT_TO_TEXT",
+              "IntegrationResponses": [
+                {
+                  "StatusCode": "200",
+                  "ResponseParameters": {
+                    "method.response.header.Access-Control-Allow-Origin": "'*'",
+                    "method.response.header.Access-Control-Allow-Headers": "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Amz-User-Agent,X-Amzn-Trace-Id'",
+                    "method.response.header.Access-Control-Allow-Methods": "'OPTIONS,GET'"
+                  },
+                  "ResponseTemplates": {
+                    "application/json": ""
+                  }
+                }
+              ]
+            },
+            "ResourceId": {
+              "Ref": "ApiGatewayResourceHealth"
+            },
+            "RestApiId": {
+              "Ref": "ApiGatewayRestApi"
+            }
+          }
+        },
+        "ApiGatewayMethodChatPost": {
+          "Type": "AWS::ApiGateway::Method",
+          "Properties": {
+            "HttpMethod": "POST",
+            "RequestParameters": {},
+            "ResourceId": {
+              "Ref": "ApiGatewayResourceChat"
+            },
+            "RestApiId": {
+              "Ref": "ApiGatewayRestApi"
+            },
+            "ApiKeyRequired": "<REDACTED>",
+            "AuthorizationType": "NONE",
+            "Integration": {
+              "IntegrationHttpMethod": "POST",
+              "Type": "AWS_PROXY",
+              "Uri": {
+                "Fn::Join": [
+                  "",
+                  [
+                    "arn:",
+                    {
+                      "Ref": "AWS::Partition"
+                    },
+                    ":apigateway:",
+                    {
+                      "Ref": "AWS::Region"
+                    },
+                    ":lambda:path/2015-03-31/functions/",
+                    {
+                      "Fn::GetAtt": [
+                        "ChatLambdaFunction",
+                        "Arn"
+                      ]
+                    },
+                    "/invocations"
+                  ]
+                ]
+              }
+            },
+            "MethodResponses": [],
+            "RequestValidatorId": {
+              "Ref": "ApiGatewayServerlesschatappRequestValidator"
+            },
+            "RequestModels": {
+              "application/json": {
+                "Ref": "ApiGatewayMethodChatPostApplicationJsonModel"
+              }
+            }
+          },
+          "DependsOn": [
+            "ChatLambdaPermissionApiGateway"
+          ]
+        },
+        "ApiGatewayMethodHealthGet": {
+          "Type": "AWS::ApiGateway::Method",
+          "Properties": {
+            "HttpMethod": "GET",
+            "RequestParameters": {},
+            "ResourceId": {
+              "Ref": "ApiGatewayResourceHealth"
+            },
+            "RestApiId": {
+              "Ref": "ApiGatewayRestApi"
+            },
+            "ApiKeyRequired": "<REDACTED>",
+            "AuthorizationType": "NONE",
+            "Integration": {
+              "IntegrationHttpMethod": "POST",
+              "Type": "AWS_PROXY",
+              "Uri": {
+                "Fn::Join": [
+                  "",
+                  [
+                    "arn:",
+                    {
+                      "Ref": "AWS::Partition"
+                    },
+                    ":apigateway:",
+                    {
+                      "Ref": "AWS::Region"
+                    },
+                    ":lambda:path/2015-03-31/functions/",
+                    {
+                      "Fn::GetAtt": [
+                        "HealthLambdaFunction",
+                        "Arn"
+                      ]
+                    },
+                    "/invocations"
+                  ]
+                ]
+              }
+            },
+            "MethodResponses": []
+          },
+          "DependsOn": [
+            "HealthLambdaPermissionApiGateway"
+          ]
+        },
+        "ApiGatewayServerlesschatappRequestValidator": {
+          "Type": "AWS::ApiGateway::RequestValidator",
+          "Properties": {
+            "RestApiId": {
+              "Ref": "ApiGatewayRestApi"
+            },
+            "ValidateRequestBody": true,
+            "ValidateRequestParameters": true,
+            "Name": "serverless-chat-app-prod | Validate request body and querystring parameters"
+          }
+        },
+        "ApiGatewayMethodChatPostApplicationJsonModel": {
+          "Type": "AWS::ApiGateway::Model",
+          "Properties": {
+            "RestApiId": {
+              "Ref": "ApiGatewayRestApi"
+            },
+            "ContentType": "application/json",
+            "Schema": {
+              "type": "object",
+              "properties": {
+                "sessionId": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 100
+                },
+                "message": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 4000
+                }
+              },
+              "required": [
+                "sessionId",
+                "message"
+              ]
+            }
+          }
+        },
+        "ApiGatewayDeployment1751307233965": {
+          "Type": "AWS::ApiGateway::Deployment",
+          "Properties": {
+            "RestApiId": {
+              "Ref": "ApiGatewayRestApi"
+            },
+            "StageName": "prod"
+          },
+          "DependsOn": [
+            "ApiGatewayMethodChatOptions",
+            "ApiGatewayMethodHealthOptions",
+            "ApiGatewayMethodChatPost",
+            "ApiGatewayMethodHealthGet"
+          ]
+        },
+        "ChatLambdaPermissionApiGateway": {
+          "Type": "AWS::Lambda::Permission",
+          "Properties": {
+            "FunctionName": {
+              "Fn::GetAtt": [
+                "ChatLambdaFunction",
+                "Arn"
+              ]
+            },
+            "Action": "lambda:InvokeFunction",
+            "Principal": "apigateway.amazonaws.com",
+            "SourceArn": {
+              "Fn::Join": [
+                "",
+                [
+                  "arn:",
+                  {
+                    "Ref": "AWS::Partition"
+                  },
+                  ":execute-api:",
+                  {
+                    "Ref": "AWS::Region"
+                  },
+                  ":",
+                  {
+                    "Ref": "AWS::AccountId"
+                  },
+                  ":",
+                  {
+                    "Ref": "ApiGatewayRestApi"
+                  },
+                  "/*/*"
+                ]
+              ]
+            }
+          }
+        },
+        "HealthLambdaPermissionApiGateway": {
+          "Type": "AWS::Lambda::Permission",
+          "Properties": {
+            "FunctionName": {
+              "Fn::GetAtt": [
+                "HealthLambdaFunction",
+                "Arn"
+              ]
+            },
+            "Action": "lambda:InvokeFunction",
+            "Principal": "apigateway.amazonaws.com",
+            "SourceArn": {
+              "Fn::Join": [
+                "",
+                [
+                  "arn:",
+                  {
+                    "Ref": "AWS::Partition"
+                  },
+                  ":execute-api:",
+                  {
+                    "Ref": "AWS::Region"
+                  },
+                  ":",
+                  {
+                    "Ref": "AWS::AccountId"
+                  },
+                  ":",
+                  {
+                    "Ref": "ApiGatewayRestApi"
+                  },
+                  "/*/*"
+                ]
+              ]
+            }
+          }
+        }
+      },
+      "Outputs": {
+        "ServerlessDeploymentBucketName": {
+          "Value": "serverless-framework-deployments-us-east-1-f3884fb4-c163",
+          "Export": {
+            "Name": "sls-serverless-chat-app-prod-ServerlessDeploymentBucketName"
+          }
+        },
+        "ChatLambdaFunctionQualifiedArn": {
+          "Description": "Current Lambda function version",
+          "Value": {
+            "Ref": "ChatLambdaVersionieOqAYO3TaSuGGTUoXfJ5PguaQmsQO23KJkotbIi7M"
+          },
+          "Export": {
+            "Name": "sls-serverless-chat-app-prod-ChatLambdaFunctionQualifiedArn"
+          }
+        },
+        "HealthLambdaFunctionQualifiedArn": {
+          "Description": "Current Lambda function version",
+          "Value": {
+            "Ref": "HealthLambdaVersion7oGh6wgERS2jDzKjvDWbs5DTWY0NWRQzju5RYaAuR4"
+          },
+          "Export": {
+            "Name": "sls-serverless-chat-app-prod-HealthLambdaFunctionQualifiedArn"
+          }
+        },
+        "ServiceEndpoint": {
+          "Description": "URL of the service endpoint",
+          "Value": {
+            "Fn::Join": [
+              "",
+              [
+                "https://",
+                {
+                  "Ref": "ApiGatewayRestApi"
+                },
+                ".execute-api.",
+                {
+                  "Ref": "AWS::Region"
+                },
+                ".",
+                {
+                  "Ref": "AWS::URLSuffix"
+                },
+                "/prod"
+              ]
+            ]
+          },
+          "Export": {
+            "Name": "sls-serverless-chat-app-prod-ServiceEndpoint"
+          }
+        }
+      }
+    }
+  }
+}
