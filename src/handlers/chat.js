@@ -17,7 +17,7 @@ const {
   getAvailableServices,
   getAvailableTimeSlots
 } = require('../utils/appointment');
-const { getMessages } = require('../utils/inMemoryStore');
+const { getMessages, appendMessage } = require('../utils/inMemoryStore');
 
 // Initialize X-Ray
 AWSXRay.captureHTTPsGlobal(require('https'));
@@ -139,23 +139,26 @@ async function saveMessage(sessionId, role, content) {
 module.exports.handler = async (event) => {
   const FUNCTIONS = [
     {
-      type: 'function',
-      name: 'book_appointment',
-      description: 'Book a new appointment for a patient',
-      parameters: {
-        type: 'object',
-        properties: {
-          name: { type: 'string' },
-          dob: { type: 'string' },
-          phone: { type: 'string' },
-          email: { type: 'string' },
-          providerId: { type: 'string' },
-          windowStart: { type: 'string' },
-          windowEnd: { type: 'string' },
+    type : "function",
+    name: 'book_appointment',
+    description: 'Book a new appointment for a patient',
+    parameters: {
+      type: 'object',
+      properties: {
+        name: { type: 'string' },
+        dob: { type: 'string' },
+        phone: { type: 'string' },
+        email: { type: 'string' },
+        providerName: { type: 'string',
+          enum : ['Dr. M Subhan', 'Dr. M Owais', 'Dr. A Uddin', 'Dr. F Shaik','Dr. Omar Shaik']
         },
-        required: ['name', 'dob', 'providerId', 'windowStart', 'windowEnd'],
+        reasonForVisit: { type: 'string' },
+        windowStart: { type: 'string' },
+        windowEnd: { type: 'string' }
       },
-    },
+      required: ['name','dob','providerName', 'reasonForVisit','windowStart','windowEnd']
+    }
+  }
   ];
   const startTime = Date.now();
   const segment = AWSXRay.getSegment();
@@ -326,7 +329,7 @@ module.exports.handler = async (event) => {
 
     const userMessage = await getMessages(sessionId, systemPrompt);
     logger.debug('User message saved', { sessionId, messageId: userMessage._id });
-    
+
     // Call OpenAI API with timeout and tracing
     const openaiSubsegment = segment.addNewSubsegment('openai-api');
     const first = await openai.responses.create({
