@@ -36,6 +36,7 @@
     "@pinecone-database/pinecone": "^6.1.1",
     "aws-sdk": "^2.1574.0",
     "aws-xray-sdk-core": "^3.5.4",
+    "fuzzball": "^2.2.2",
     "mongodb": "^6.3.0",
     "openai": "^4.24.0",
     "pinecone-client": "^2.0.0",
